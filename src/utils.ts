@@ -51,9 +51,10 @@ export async function countEventsInAuditLog(inputPath?: string, outputPath?: str
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = dirname(__filename);
     
-    // Default paths if not provided
-    const defaultInputPath = join(__dirname, 'agents-log-gen', 'audit_logs_with_fields.jsonl');
-    const defaultOutputPath = join(__dirname, '..', 'lines.txt');
+    // Default paths if not provided - go to project root first
+    const projectRoot = join(__dirname, '..');
+    const defaultInputPath = join(projectRoot, 'src', 'agents-log-gen', 'audit_logs_with_fields.jsonl');
+    const defaultOutputPath = join(projectRoot, 'lines.txt');
     
     const finalInputPath = inputPath || defaultInputPath;
     const finalOutputPath = outputPath || defaultOutputPath;
