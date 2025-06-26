@@ -1,0 +1,210 @@
+[
+  {
+    "id": "c099f26b-2911-4a93-8ff9-474dcbee5886",
+    "name": "EntraID Devices Governance",
+    "mermaid": "flowchart TD\n    A[Start] -->|EntraID User| B[Check Entra ID Devices]\n    B --> C{Are there no devices?}\n    C -->|Yes| D[Escalate to MFA Responsible]\n    C -->|No| E{Are devices inactive?}\n    E -->|No| F[No Action Required]\n    E -->|Yes| G[Send Email to User]\n    G --> H[Set 30 Day Timeout]\n    H --> I{User Response?}\n    I -->|Autonomous Removal| J[No Action Required]\n    I -->|Exception Request| K[Escalate to Owner]\n    I -->|Refusal without Reason| L[Escalate to Owner]\n    I -->|Needs Support| M[Escalate to Owner]\n    I -->|No Response| N[Escalate to Owner]\n    D --> O[Close Process]\n    F --> O\n    J --> O\n    K --> O\n    L --> O\n    M --> O\n    N --> O",
+    "task": {
+      "taskId": "device-gov-001",
+      "userPrincipalName": "john.doe@contoso.com",
+      "userId": "12345678-1234-1234-1234-123456789012",
+      "initiatedAt": "2025-06-26T10:00:00Z",
+      "status": "pending",
+      "description": "Review and manage inactive devices for user john.doe@contoso.com",
+      "metadata": {
+        "userDisplayName": "John Doe",
+        "department": "Engineering",
+        "lastLoginDate": "2025-06-20T08:30:00Z"
+      }
+    },
+    "inputPrompt": "# Inactive Device Management Process\n\nThe Inactive Device Management process verifies users' registered devices in Entra ID, identifying and managing devices unused for over three months . The goal is to maintain effective security and MFA compliance\n\nAt a high level, the process includes checking device activity, contacting users when inactive devices are found, and monitoring their feedback . Situations such as users having no registered devices or failing to respond within 30 days require escalation to the MFA Access Responsible or Process Owner for further investigation and actions.\n\n## Process Stakeholders\n\nThis process, in addition to the individual user subject to the personal device review, also involves the following company roles:\n\n-   MFA Access Responsible: andrea.tomassi@sharelock.ai\n    \n-   Process Owner: Andrea Tomassi (andrea.tomassi@sharelock.ai)\n    \n\n## Process Flow\n\n### Information Retreival\n\nFor the given user, find all registered devices in Entra ID. Check the last sign-in date for each device. A device is considered inactive if it has not been used for more than 3 months, based on the 'approximateLastSignInDateTime' property.\n\n#### No devices are available for the given user\n\nNo device removal is required. However, this indicates a more severe issue: the user lacks MFA capability. Send an email to the MFA Access Responsible to investigate this situation.\n\n#### There aren't inactive devices among those registered by the user.\n\nNo further action is required.\n\n#### Inactive Devices Found (two steps)\n\nstep 1) Send an email to the user specifying:\n\n-   a list of inactive devices.\n    \n-   the inactivity period for each device.\n    \n-   a gentle request to remove unnecessary devices from their account.\n    \n\nstep 2) Register for the user reply setting a 30 days period as a timeout.\n\n### Handling User Responses\n\nInclude the registered devices list you got from Entra ID when sending the email. Communications to the same stakeholder should be consolidated into a single email.\n\n#### The user declares the autonomous removal of inactive devices.\n\nNo further action is required.\n\n#### The user requests an exception\n\nSend an email to the process owner requesting that they contact the user to assess the possibility of granting an exception.\n\n#### The user explicitly refuses to remove inactive devices without providing a valid reason\n\nSend an email to the process owner to investigate this situation.\n\n#### User asks for support about how to do the device removal\n\nSend an email the process owner asking to contact the user to provide them with the instructions they expressed the need for.\n\n#### The User ask for intervention: cannot remove devices themselves\n\nSend an email to the process owner asking to execute the device removal on behalf of the user.\n\n### The user doesn't reply so the timeout expires\n\nAfter registering for a reply, no response from the user has been received. The timeout duration has expired so send an email to the process owner to investigate this situation.",
+    "actions": [
+      {
+        "name": "ai-entraid-tools",
+        "tool_server_url": "SHARELOCK_AI_ENTRAID_TOOLS_OPENAPI_URL",
+        "tool_server_type": true,
+        "operationIds": [
+          "Get_User_Profile",
+          "Get_all_the_registered_devices_for_a_specific_user"
+        ]
+      },
+      {
+        "name": "ai-system-tools",
+        "tool_server_url": "SHARELOCK_AI_SYSTEM_TOOLS_OPENAPI_URL",
+        "tool_server_type": true,
+        "operationIds": [
+          "Classifies_email_accounts_as_human_or_service_accounts"
+        ]
+      },
+      {
+        "name": "ai-communication-tools",
+        "tool_server_url": "SHARELOCK_AI_COMMUNICATION_TOOLS_OPENAPI_URL",
+        "tool_server_type": true,
+        "operationIds": [
+          "Send_Email_Message",
+          "Register_for_Email_Reply"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "5fe958c9-1818-4909-a883-70ef806339d5",
+    "name": "Account Lockout Review Process",
+    "mermaid": "flowchart TD\n    A[Start] -->|Create Jira Issue| B[Notify SOC Responsible]\n    B --> C{SOC Response?}\n    C -->|Confirms Lockout| D[Close Process]\n    C -->|Requests Unlock| E[Unlock Account] --> F[Close Process]\n    C -->|Unclear Comment| D\n    C -->|No Response| G[Send Timeout Notice] --> H[Close Process]",
+    "task": {
+      "taskId": "lockout-review-001",
+      "lockedAccount": "jane.smith@contoso.com",
+      "lockoutReason": "Multiple failed authentication attempts detected",
+      "lockoutTimestamp": "2025-06-26T09:15:00Z",
+      "alertSource": "Azure AD Identity Protection",
+      "status": "pending_soc_review",
+      "description": "Account lockout review for jane.smith@contoso.com due to suspicious authentication activity",
+      "metadata": {
+        "ipAddress": "192.168.1.100",
+        "failedAttempts": 15,
+        "timeWindow": "5 minutes",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+        "location": "Unknown"
+      }
+    },
+    "inputPrompt": "# Account Lockout Review Process\n\nThe Account Lockout Review Process involves SOC responsible actors who receive lockout events, review the context and legitimacy of the lockout, and decide whether the account should remain locked or be unlocked based on investigation and risk assessment.\n\n## Process Stakeholders\n\nThis process involves the following company roles:\n\n-   SOC Responsible: andrea.tomassi@sharelock.ai\n    \n\n## Process Flow\n\nThe task represents a lockout event involving an IdP account. The enforcement of the lockout has already been executed.\n\n### Notification to Process Stakeholders\n\nStep 1) Open a Jira Issue to the SOC Responsible specifying:\n\n-   All the available information on the locked account\n    \n-   The reasons why the account was locked, if any\n    \n-   The date when the account was locked, if any\n    \n-   Include at the end of the email a professional and gentle phrase such as \"Given the circumstances, please advise whether the account should remain locked or be unlocked\"\n    \n-   set a timeout period of 7 days.\n    \n\nStep 2)\n\n### Handling SOC Responses\n\nThe SOC responsible decide whether to unlock the account in question by commenting the Jira issue item.\n\n#### The SOC responsible confirms the account lockout\n\nNo further action is required. The process ends.\n\n#### The SOC responsible requests the account unlock with reasons\n\nProceed by performing the following steps:\n\nStep 1) Unlock the user account in question\n\nStep 2) Close the Jira Issue, including the reason given by the SOC team responsible.\n\nKeep the account locked. No further action is required. The process ends.\n\n#### The SOC responsible provides an unclear comment\n\nKeep the account locked. No further action is required. The process ends.\n\n### The SOC responsible doesn't reply so the timeout expires\n\nAfter registering for a Jira Issue status change, no action from the SOC responsible has been received. The timeout duration has expired, so send an email to the SOC responsible informing them that the process has expired and the account will remain locked. If they want to unlock it, they must do it manually. The process ends .",
+    "actions": [
+      {
+        "name": "ai-communication-tools",
+        "tool_server_url": "SHARELOCK_AI_COMMUNICATION_TOOLS_OPENAPI_URL",
+        "tool_server_type": "true",
+        "operationIds": [
+          "create_a_jira_issue_ticket_asynchronously"
+        ]
+      },
+      {
+        "name": "ai-entraid-tools",
+        "tool_server_url": "SHARELOCK_AI_ENTRAID_TOOLS_OPENAPI_URL",
+        "tool_server_type": "true",
+        "operationIds": [
+          "unlock_a_disabled_entraid_user_account"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "72ee475d-2df6-44e0-8303-fd0694b09173",
+    "name": "EntraID User License Report",
+    "mermaid": "flowchart TD\n    A[Start] -->|User Identifier| B[Retrieve User Licenses]\n    B --> C{Licenses Found?}\n    C -->|No| D[Close Process]\n    C -->|Yes| E{License Count > 5?}\n    E -->|No| D\n    E -->|Yes| F[Send Email to Process Owner]\n    F --> D",
+    "task": {
+      "taskId": "license-report-001",
+      "userPrincipalName": "admin.user@contoso.com",
+      "userId": "87654321-4321-4321-4321-210987654321",
+      "initiatedAt": "2025-06-26T11:00:00Z",
+      "status": "pending",
+      "description": "Generate license report for user admin.user@contoso.com and check if license count exceeds threshold",
+      "metadata": {
+        "userDisplayName": "Admin User",
+        "department": "IT Administration",
+        "expectedLicenseCount": 7,
+        "reviewType": "quarterly_audit"
+      }
+    },
+    "inputPrompt": "# User License Report Process\n\nThe User License Report Process will retrieve the licenses assigned to a user.\n\n## Process Stakeholders\n\nProcess Owner: Andrea Tomassi (andrea.tomassi@sharelock.ai)\n\n## Process Flow\n\n### Information Retrieval\n\nGiven a user, retrieve the assigned licenses he owns. The licenses are available by consulting the user profile information.\n\n#### There aren't any assigned licenses to the user.\n\nNo further action is required.\n\n#### Licenses Found\n    \nIf the total number of user assigned licenses is greater than 5, then send an email to the process owner, , including the following information:\n\n-   the user identifier\n-   the user first name\n-   the user last name\n-   the list of the licenses",
+    "actions": [
+      {
+        "name": "ai-entraid-tools",
+        "tool_server_url": "SHARELOCK_AI_ENTRAID_TOOLS_OPENAPI_URL",
+        "tool_server_type": "true",
+        "operationIds": [
+          "get_user_profile",
+          "get_all_the_registered_devices_for_a_specific_user"
+        ]
+      },
+      {
+        "name": "ai-communication-tools",
+        "tool_server_url": "SHARELOCK_AI_COMMUNICATION_TOOLS_OPENAPI_URL",
+        "tool_server_type": "true",
+        "operationIds": [
+          "send_email_message"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "45eb0c84-c977-4373-a12a-7cdbf469d0c7",
+    "name": "EntraID User Enrichment",
+    "mermaid": "flowchart TD\n    A[Start] -->|User Data| B[Check Classification]\n    B --> C{Classification Available?}\n    C -->|No| D[Close Process]\n    C -->|Yes| E[Prepare User Info JSON]\n    E --> F{Upsert User Info}\n    F -->|Success| G[Close Process]\n    F -->|Fail| H[Close Process]",
+    "task": {
+      "taskId": "user-enrichment-001",
+      "userPrincipalName": "service.account@contoso.com",
+      "userId": "11111111-2222-3333-4444-555555555555",
+      "initiatedAt": "2025-06-26T12:00:00Z",
+      "status": "pending",
+      "description": "Classify user service.account@contoso.com as human or service account and upsert additional information",
+      "metadata": {
+        "userDisplayName": "Service Account",
+        "createdDate": "2025-01-15T00:00:00Z",
+        "lastPasswordChange": "2025-01-15T00:00:00Z",
+        "signInFrequency": "automated_daily",
+        "expectedClassification": "service_account"
+      }
+    },
+    "inputPrompt": "# EntraID User Enrichment Process\n\nFor each user , determine a classification and then upsert the User Information section with the results\n\n1.  No Classification Available  \n    If no classification can be determined, Close the process with the reason `Missing classification: expected either human or service_account, I got: <the classification outcome>.` No further action is required.\n    \n2.  Valid Classification Found  \n    When a valid classification is available for the target account, upsert the user's additional information using this JSON structure: { \"userPrincipalName\": \"john.doe@contoso.com\", \"additionalInfo\": { \"classification\": \"human\", \"confidence\": 0.95 } }\n    \n    -   additionalInfo may contain only the fields `classification` and `confidence`.\n        \n    -   Valid values for `classification` are `human` or `service_account`.\n        \n    -   MANDATORY: If a valid classification is available, you must upsert the User Information section before closing the task. The upsert result contributes to the task execution report.\n        \n\n2a. Upsert Succeeds  \nIf the upsert operation completes successfully, close the process. The closing message must reference both the user and the applied classification. No further action is required.\n\n2b. Upsert Fails  \nIf the upsert operation returns an error, terminate the process with an error message. No further action is required.",
+    "actions": [
+      {
+        "name": "ai-system-tools",
+        "tool_server_url": "SHARELOCK_AI_SYSTEM_TOOLS_OPENAPI_URL",
+        "tool_server_type": "true",
+        "operationIds": [
+          "classifies_email_accounts_as_human_or_service_accounts"
+        ]
+      },
+      {
+        "name": "ai-entraid-tools",
+        "tool_server_url": "SHARELOCK_AI_ENTRAID_TOOLS_OPENAPI_URL",
+        "tool_server_type": "true",
+        "operationIds": [
+          "upsert_user_additional_information"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "85c4334b-585e-4858-926f-7d752dab783f",
+    "name": "SIA - Security Investigation Autopilot",
+    "mermaid": "flowchart TD\n    A[Start] -->|Input Data| B[Retrieve IAG Code]\n    B --> C[Check Application Type]\n    C -->|Federated Application| D[Use IdP Account]\n    C -->|Non-Federated Application| E[Run iag_to_application_account]\n    D --> F[Comprehensive Data Gathering]\n    E --> F\n    F --> G{New Data Available?}\n    G -->|Yes| H[Apply Relevant Tools]\n    G -->|No| I[Close Process]\n    H --> J{New Data Available?}\n    J -->|Yes| H\n    J -->|No| I\n    I --> K[Set Investigation Result and Severity Level]\n    K --> L[Close Process]",
+    "task": {
+      "taskId": "security-investigation-001",
+      "userIdentifier": "mike.wilson@contoso.com",
+      "alertId": "ALT-2025-062601-001",
+      "initiatedAt": "2025-06-26T13:30:00Z",
+      "status": "pending",
+      "description": "Security investigation for suspicious behavioral anomaly detected for user mike.wilson@contoso.com",
+      "metadata": {
+        "alertType": "behavioral_anomaly",
+        "riskScore": 85,
+        "anomalyDetails": {
+          "unusualLocation": "Geographic anomaly detected - login from new country",
+          "timeAnomaly": "Login outside normal business hours",
+          "accessPattern": "Unusual application access pattern detected"
+        },
+        "sourceApplication": "SharePoint",
+        "sourceIP": "203.0.113.45",
+        "timestamp": "2025-06-26T02:15:00Z",
+        "userAgent": "Mozilla/5.0 (Linux; Android 10; SM-G975F)",
+        "iagUserCode": "MW001234"
+      }
+    },
+    "inputPrompt": "The Security Investigation Autopilot delivers a structured approach for automated security investigations. It ensures comprehensive data gathering, consistent outcomes, and evidence-based severity assessments.\n\n## Context\n\n-   **Identity Provider (IdP):** AzureActiveDirectory Cloud\n    \n-   **Federated Applications:** SharePoint, Salesforce (SSO via AzureActiveDirectory Cloud)\n    \n-   **Non-Federated Applications:** SAP, Connectra VPN (mapped to IAG system)\n    \n\n## Investigation Process Framework\n\n### Phase 1: Initial Context Enrichment\n\nIdentify any user identifier and the originating application; this is the investigation's entry point.\n\n1.  **IAG User**: Execute `retrieve_iag_code` to collect the IAG user code.\n    \n2.  **IdP Account**: If the originating application isn't neither an IdP nor a federated application, run `iag_to_application_account` with:\n    \n    -   IAG user code\n        \n    -   IdP application identifier (AzureActiveDirectory Cloud)\n\nNote: In both cases, at this point the IdP account is available and it can be part of the investigation.\n\n### Phase 2: Comprehensive Data Gathering\n\n-   Apply all relevant tools to each available identifier, entity, object, resource and IP address available for the given task.\n    \n-   After each response, check if any new data received unlocks applicable tools.\n    \n-   Continue until no additional information emerges with further tool calling on the available data.\n    \n\n### Phase 3: Investigation Closure\n\nInvoke `set_investigation_result_and_severity_level` as the very last tool calling to finalize the investigation.\n\n## Quality Assurance\n\nMandatory rules:\n\n1.  Base severity solely on this investigation's findings. Example: a task triggered from a behavioral anomaly may indicate an insider-threat pattern. Even if no access anomalies surface, the alert can still represent a threat.\n    \n2.  Never downplay the severity indicated by the initial facts. Low means \"no further elements\". Minimizing on a security alert is not allowed.\n    \n3.  Always invoke set\\_investigation\\_result\\_and\\_severity\\_level as the final tool.",
+    "actions": [
+      {
+        "name": "ai-investigations",
+        "tool_server_url": "SHARELOCK_AI_INVESTIGATIONS_OPENAPI_URL",
+        "tool_server_type": "true",
+        "operationIds": [
+          "ip_threat_intelligence",
+          "sap_transaction_analysis",
+          "retrieve_iag_code",
+          "iag_to_application_account",
+          "set_investigation_result_and_severity_level",
+          "entraid_idp_behavioral_investigation"
+        ]
+      }
+    ]
+  }
+]
