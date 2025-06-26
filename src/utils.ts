@@ -1,6 +1,8 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import * as readline from 'readline';
+import * as fs from 'fs';
 
 export function hello() {
     console.log("Hello, world!");
@@ -40,6 +42,43 @@ export function removeStatisticsFromProcesses(inputPath?: string, outputPath?: s
         return finalOutputPath;
     } catch (error) {
         console.error('Error processing processes.json:', error);
+        throw error;
+    }
+}
+
+export async function countEventsInAuditLog(inputPath?: string, outputPath?: string): Promise<number> {
+    // Get current directory in ES modules
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = dirname(__filename);
+    
+    // Default paths if not provided
+    const defaultInputPath = join(__dirname, 'agents-log-gen', 'audit_logs_with_fields.jsonl');
+    const defaultOutputPath = join(__dirname, '..', 'lines.txt');
+    
+    const finalInputPath = inputPath || defaultInputPath;
+    const finalOutputPath = outputPath || defaultOutputPath;
+    
+    try {
+        const inputStream = fs.createReadStream(finalInputPath);
+        const rl = readline.createInterface({ input: inputStream, crlfDelay: Infinity });
+        
+        let eventCount = 0;
+        
+        for await (const line of rl) {
+            if (line.trim()) {
+                eventCount++;
+            }
+        }
+        
+        // Write the count to output file
+        writeFileSync(finalOutputPath, eventCount.toString(), 'utf8');
+        
+        console.log(`Successfully counted ${eventCount} events in audit log file`);
+        console.log(`Result written to: ${finalOutputPath}`);
+        
+        return eventCount;
+    } catch (error) {
+        console.error('Error counting events in audit log file:', error);
         throw error;
     }
 }

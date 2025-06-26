@@ -1,6 +1,14 @@
-import { hello, removeStatisticsFromProcesses } from "./utils";
+import { hello, removeStatisticsFromProcesses, countEventsInAuditLog } from "./utils";
 
 hello();
+
+// Count events in audit log and write to lines.txt
+try {
+    const eventCount = await countEventsInAuditLog();
+    console.log(`Total events counted: ${eventCount}`);
+} catch (error) {
+    console.error('Failed to count events:', error);
+}
 
 // Test the removeStatisticsFromProcesses function
 try {
