@@ -1,4 +1,4 @@
-import { hello, removeStatisticsFromProcesses, countEventsInAuditLog } from "./utils";
+import { hello, removeStatisticsFromProcesses, countEventsInAuditLog } from "./utils.js";
 
 hello();
 
